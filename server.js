@@ -5,6 +5,7 @@ var request = require('request');
 var url = require('url');
 var config = require('./config.js');
 var uuid = require('node-uuid');
+var qs = require('querystring')
 
 var host = 'localhost';
 var options = { //for github api
@@ -19,24 +20,23 @@ var state = uuid.v4(); //Random string
 
 //main page
 dispatcher.onGet("/", function(req, res) {
-  var data = "<!DOCTYPE html><html><body><form action=\"/login\">GH username of the student:<br><input type=\"text\" name=\"student\"><br><input type=\"submit\" value=\"Submit\"></form></body></html>";
+  var data = "<!DOCTYPE html><html><body><form action=\"/login\" method=\"post\">GH username of the student:<br><input type=\"text\" name=\"student\"><br><input type=\"submit\" value=\"Submit\"></form></body></html>";
   res.write(data);
   res.end();
 });
 
 //login page
-dispatcher.onGet("/login", function(req, res) {
-  var url_parts = url.parse(req.url, true);
-  var query = url_parts.query;
-  var _url = 'https://github.com/login/oauth/authorize'
-  + '?client_id=' + options.clientID
-  + (options.scope ? '&scope=' + options.scope : '')
-  + '&redirect_uri=' + options.redirectURI + encodeURIComponent("?student="+query.student)
-  + '&state=' + state
-  ;
-  res.statusCode = 302;
-  res.setHeader('location', _url);
-  res.end();
+dispatcher.onPost("/login", function(req, res) {
+   var query = qs.parse(req.body);
+   var _url = 'https://github.com/login/oauth/authorize'
+   + '?client_id=' + options.clientID
+   + (options.scope ? '&scope=' + options.scope : '')
+   + '&redirect_uri=' + options.redirectURI + encodeURIComponent("?student="+query.student)
+   + '&state=' + state
+   ;
+   res.statusCode = 302;
+   res.setHeader('location', _url);
+   res.end();
 });
 
 dispatcher.onGet("/callback", function(req, res) {
