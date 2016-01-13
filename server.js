@@ -12,30 +12,32 @@ var options = { //for github api
   secret: config.secret,
   scope: '',
   redirectURI: 'http://'+host+':8080/callback', //make sure this is the same as the callback URI in github
-  
+
 };
 
 var state = uuid.v4(); //Random string
 
 //main page
 dispatcher.onGet("/", function(req, res) {
-  var data = "<!DOCTYPE html><html><body><a href='login'>Login to App</a></body></html>";
+  var data = "<!DOCTYPE html><html><body><form action=\"/login\">GH username of the student:<br><input type=\"text\" name=\"student\"><br><input type=\"submit\" value=\"Submit\"></form></body></html>";
   res.write(data);
   res.end();
 });
 
-//login page 
+//login page
 dispatcher.onGet("/login", function(req, res) {
-  var url = 'https://github.com/login/oauth/authorize'
+  var url_parts = url.parse(req.url, true);
+  var query = url_parts.query;
+  var _url = 'https://github.com/login/oauth/authorize'
   + '?client_id=' + options.clientID
   + (options.scope ? '&scope=' + options.scope : '')
-  + '&redirect_uri=' + options.redirectURI
+  + '&redirect_uri=' + options.redirectURI + encodeURIComponent("?student="+query.student)
   + '&state=' + state
   ;
   res.statusCode = 302;
-  res.setHeader('location', url);
+  res.setHeader('location', _url);
   res.end();
-});    
+});
 
 dispatcher.onGet("/callback", function(req, res) {
   var url_parts = url.parse(req.url, true);
@@ -51,81 +53,109 @@ dispatcher.onGet("/callback", function(req, res) {
     request.post({url: 'https://github.com/login/oauth/access_token', formData: arguments, headers: {'Accept': 'application/json'}}, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         var token = JSON.parse(body).access_token;
-        res.statusCode = 302;
-        welcome(res, token);
+        welcome(res, token, query.student);
+      } else {
+        res.end("Error while getting access token");
       }
     });
-    
+
   }
   else {
-    res.end('Sorry, an error occured.');
+    res.end("Error");
   }
 });
 
 //print welcome statement
-function welcome(res, token) {
-  request.get({url: "https://api.github.com/user", headers: {'Authorization': 'token '+token, 'User-Agent': 'Mozilla/5.0'}}, function(error, response, body) {
-    if (!error && response.statusCode == 200) {
-      body = JSON.parse(body);
-      var user = body.login;
-      checkMembership(user, token, res);
-    } else {
-      console.log(body);
-    }
-  });
-  
-  
-function checkMembership(user, token, res) {
-  var checking = {
-  teamID: 1163900, //GCI Students Team for Fossasia
-  user: user
-  };
+function welcome(res, token, student) {
 
-//options for the https request
-  var options = {
-    url: 'https://api.github.com/teams/'+checking.teamID+'/memberships/'+checking.user,
+  var userRequestOptions = {
+    url: "https://api.github.com/user",
     headers: {
       'Authorization': 'token '+token,
       'User-Agent': 'Mozilla/5.0'
     }
+  }
+
+  request.get(userRequestOptions, function(error, response, body) {
+    if (!error && response.statusCode == 200) {
+      body = JSON.parse(body);
+      var user = body.login;
+      checkMembership(user, student, res);
+    } else {
+      res.end("Error in authorization")
+    }
+  });
+}
+
+function checkMembership(user, student, res) {
+  var checking = {
+    teamID: 1163899, //FOSSASIA-GCI
+    user: user
   };
-  request.get(options, function(error, response, body) {
+
+  var checkMembershipOptions = {
+    url: 'https://api.github.com/teams/'+checking.teamID+'/memberships/'+checking.user,
+    headers: {
+      'Authorization': 'token ' + config.myPersonalAccessToken,
+      'User-Agent': 'Mozilla/5.0'
+    }
+  };
+
+  request.get(checkMembershipOptions, function(error, response, body) {
     var active;
     if (!error && response.statusCode == 200) {
       body = JSON.parse(body);
-      console.log(body);
-      if(body.state == "active") { 
-          active = true;
+      if(body.state == "active") {
+        addStudent(student, user, res);
       } else {
-        active = false;
+        res.end("You don't have permission to add students.");
       }
-      printStatement(user, active, res);
     } else {
-      console.log(body);
-      res.end("You don't have permission to check for team membership.");
+      res.end("You don't have permission to add students.");
     }
   });
-  
-}
-  
-  function printStatement(name, isActive, res) {
-    if(isActive) {
-      res.write("<!DOCTYPE html><html><body><h1>Dashboard</h1>Welcome to your dashboard, "+name+"! You are part of the FOSSASIA GCI Student Team.</body></html>");
-    } else {
-      res.write("<!DOCTYPE html><html><body><h1>Dashboard</h1>Welcome to your dashboard, "+name+"! You are not part of the FOSSASIA GCI Student Team.</body></html>");
-    }
-    res.end();
-  }
+
 }
 
+function addStudent(student, user, res) {
+  console.log(user + ' adding ' + student);
+  var adding = {
+    teamID: 1163900, //FOSSASIA-GCI-Students
+    user: student
+  };
+
+  var options = {
+    url: 'https://api.github.com/teams/'+adding.teamID+'/memberships/'+adding.user,
+    headers: {
+      'Authorization': 'token ' + config.myPersonalAccessToken,
+      'User-Agent': 'Mozilla/5.0'
+    }
+  };
+
+  request.put(options, function(error, response, body) {
+    if (!error && response.statusCode == 200) {
+      body = JSON.parse(body);
+      var state = "";
+      if(body.state == "pending"){
+        res.end("Student " + student + " is invited. Thanks " + user + " :)");
+      } else if(body.state == "active") {
+        res.end("Student " + student + " is already a member. Thanks " + user + " :)");
+      } else {
+        res.end("Something went wrong :( Please post in slack group instead. Thanks " + user + " :)");
+      }
+    } else {
+      res.end("Something went wrong :( Please post in slack group instead. Thanks " + user + " :)");
+    }
+  });
+}
+
+
 //define port for listening for web server
-const PORT = 8080;
+var PORT = 8080;
 
 //handle requests function
 function handleRequest (request, response) {
   try {
-    //log the request on console
-    console.log(request.url);
     //Disptach
     dispatcher.dispatch(request, response);
   } catch(err) {

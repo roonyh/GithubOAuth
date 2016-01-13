@@ -1,4 +1,6 @@
 module.exports = {
-	"client_id": "",
-	"secret": ""
+	client_id: "",
+	secret: "",
+	myPersonalAccessToken: ""
 };
+
