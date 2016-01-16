@@ -1,6 +1,6 @@
 {
-  "name": "GithubOAuth",
-  "description": "NodeJS app for authenticating into Github.",
+  "name": "fagci.ga",
+  "description": "FOSSASIA-GCI Add Students to GH Team",
   "dependencies": {
     "httpdispatcher": "*",
     "request": "*",

@@ -1,19 +1,17 @@
-//import modules
 var http = require('http');
 var dispatcher = require('httpdispatcher');
 var request = require('request');
 var url = require('url');
-var config = require('./config.js');
 var uuid = require('node-uuid');
-var qs = require('querystring')
+var qs = require('querystring');
+var config = require('./config.js');
 
-var host = 'localhost';
+var host = config.host;
 var options = { //for github api
   clientID: config.client_id,
   secret: config.secret,
   scope: '',
-  redirectURI: 'http://'+host+':8080/callback', //make sure this is the same as the callback URI in github
-
+  redirectURI: 'http://localhost:8080/callback', //make sure this is the same as the callback URI in github
 };
 
 var state = uuid.v4(); //Random string
@@ -78,8 +76,7 @@ function welcome(res, token, student) {
 
   request.get(userRequestOptions, function(error, response, body) {
     if (!error && response.statusCode == 200) {
-      body = JSON.parse(body);
-      var user = body.login;
+      var user = JSON.parse(body).login;
       checkMembership(user, student, res);
     } else {
       res.end("Error in authorization")
@@ -89,20 +86,19 @@ function welcome(res, token, student) {
 
 function checkMembership(user, student, res) {
   var checking = {
-    teamID: 1163899, //FOSSASIA-GCI
+    teamID: config.mentorGroupId, //FOSSASIA-GCI
     user: user
   };
 
   var checkMembershipOptions = {
     url: 'https://api.github.com/teams/'+checking.teamID+'/memberships/'+checking.user,
     headers: {
-      'Authorization': 'token ' + config.myPersonalAccessToken,
+      'Authorization': 'token ' + config.ownerPersonalAccessToken,
       'User-Agent': 'Mozilla/5.0'
     }
   };
 
   request.get(checkMembershipOptions, function(error, response, body) {
-    var active;
     if (!error && response.statusCode == 200) {
       body = JSON.parse(body);
       if(body.state == "active") {
@@ -120,14 +116,14 @@ function checkMembership(user, student, res) {
 function addStudent(student, user, res) {
   console.log(user + ' adding ' + student);
   var adding = {
-    teamID: 1163900, //FOSSASIA-GCI-Students
+    teamID: config.studentGroupId, //FOSSASIA-GCI-Students
     user: student
   };
 
   var options = {
     url: 'https://api.github.com/teams/'+adding.teamID+'/memberships/'+adding.user,
     headers: {
-      'Authorization': 'token ' + config.myPersonalAccessToken,
+      'Authorization': 'token ' + config.ownerPersonalAccessToken,
       'User-Agent': 'Mozilla/5.0'
     }
   };
