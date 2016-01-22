@@ -22,6 +22,7 @@ describe('GCI Invite', function() {
     it('should be redirected to github login page', function (done) {
       request.post({url: base_url + 'login', form: {student: 'sevazhidkov'}},
         function(err, response) {
+          assert.equal(302, response.statusCode);
           assert.notEqual(-1, response.headers.location.search('github.com'));
           done();
         }
