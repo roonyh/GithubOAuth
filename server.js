@@ -167,3 +167,8 @@ var server = http.createServer(handleRequest);
 server.listen(PORT, function () {
   console.log("Server listening on: http://"+host+":%s", PORT);
 });
+
+exports.server = server;
+exports.state = state;
+exports.options = options;
+exports.config = config;
