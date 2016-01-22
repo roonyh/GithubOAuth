@@ -5,6 +5,8 @@
     "httpdispatcher": "*",
     "request": "*",
     "node-uuid": "*",
+  },
+  "devDependecies": {
     "mocha": "*",
     "nock": "*"
   }
