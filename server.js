@@ -169,3 +169,6 @@ server.listen(PORT, function () {
 });
 
 exports.server = server;
+exports.state = state;
+exports.options = options;
+exports.config = config;
