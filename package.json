@@ -4,6 +4,8 @@
   "dependencies": {
     "httpdispatcher": "*",
     "request": "*",
-    "node-uuid": "*"
+    "node-uuid": "*",
+    "mocha": "*",
+    "nock": "*"
   }
 }
