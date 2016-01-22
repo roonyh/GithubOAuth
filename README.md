@@ -13,3 +13,7 @@ This application is used by FOSSASIA mentors to send invitations to FOSSASIA GCI
 8. Go to `http://localhost:8080/` to see the application.
 
 See config.sample.js for info about the configurations.
+
+## Testing
+
+For detailed instructions on how to test this app, go to the `test` directory.

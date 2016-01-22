@@ -1,6 +1,8 @@
 module.exports = {
 	client_id: "",
 	secret: "",
+	scope: "",
+	redirectURI: 'http://localhost:8080/callback', //make sure this is the same as the callback URI in github
 
 	// This token has to be from a user with permission to add students on Github
 	ownerPersonalAccessToken: "",
@@ -12,6 +14,7 @@ module.exports = {
 	studentGroupId: 1163900,
 
 	// The name of the host
-	host: "localhost"
+	host: "localhost",
+	// The port for the server
+	port: 8080
 };
-
